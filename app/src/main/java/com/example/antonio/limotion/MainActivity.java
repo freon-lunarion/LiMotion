@@ -36,10 +36,13 @@ public class MainActivity extends AppCompatActivity  {
             int seconds = (int) (millis / 1000);
             int minutes = seconds / 60;
             seconds = seconds % 60;
-
-            series.appendData(new DataPoint(xPoint,yLux),true,40);
-            Log.d("MY_APP", String.valueOf(yLux+ " - "+ xPoint));
             xPoint +=.5d;
+            if (yLux == null) {
+                yLux = 0f;
+            }
+
+            series.appendData(new DataPoint(xPoint,yLux),true,25);
+            Log.d("MY_APP", String.valueOf(yLux+ " - "+ xPoint));
 
             timerHandler.postDelayed(this, 500);
         }
@@ -59,11 +62,14 @@ public class MainActivity extends AppCompatActivity  {
         startTime = System.currentTimeMillis();
         timerHandler.postDelayed(timerRunnable, 0);
         series = new LineGraphSeries<>();
+        series.appendData(new DataPoint(0,0),true, 25);
         graph.addSeries(series);
 
         graph.getViewport().setXAxisBoundsManual(true);
         graph.getViewport().setMinX(0);
-        graph.getViewport().setMaxX(40);
+        graph.getViewport().setMaxX(10);
+        graph.getViewport().setMinY(0);
+
 
 
     }
