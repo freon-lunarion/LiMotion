@@ -1,5 +1,6 @@
 package com.example.antonio.limotion;
 
+import android.annotation.SuppressLint;
 import android.content.Context;
 import android.hardware.Sensor;
 import android.hardware.SensorEvent;
@@ -9,10 +10,13 @@ import android.os.Handler;
 import android.support.v7.app.AppCompatActivity;
 import android.os.Bundle;
 import android.util.Log;
+import android.widget.TextView;
 
 import com.jjoe64.graphview.GraphView;
 import com.jjoe64.graphview.series.DataPoint;
 import com.jjoe64.graphview.series.LineGraphSeries;
+
+import java.util.Iterator;
 
 public class MainActivity extends AppCompatActivity  {
 
@@ -22,6 +26,11 @@ public class MainActivity extends AppCompatActivity  {
     private LineGraphSeries<DataPoint> series;
     private GraphView graph;
     private Float yLux;
+    private Boolean isUp = true;
+    private Boolean hold = false;
+    private Integer downCounter = 0;
+    private Integer upCounter = 0;
+    private TextView counterTxt;
 
 
     long startTime = 0;
@@ -45,6 +54,21 @@ public class MainActivity extends AppCompatActivity  {
             Log.d("MY_APP", String.valueOf(yLux+ " - "+ xPoint));
 
             timerHandler.postDelayed(this, 500);
+
+        }
+    };
+
+    Handler timerHandler2 = new Handler();
+    Runnable timerRunnable2 = new Runnable() {
+
+        @Override
+        public void run() {
+            if (hold){
+                hold = false;
+            }
+
+            timerHandler2.postDelayed(this, 1500);
+
         }
     };
 
@@ -61,6 +85,7 @@ public class MainActivity extends AppCompatActivity  {
 
         startTime = System.currentTimeMillis();
         timerHandler.postDelayed(timerRunnable, 0);
+        timerHandler2.postDelayed(timerRunnable2, 0);
         series = new LineGraphSeries<>();
         series.appendData(new DataPoint(0,0),true, 25);
         graph.addSeries(series);
@@ -70,18 +95,40 @@ public class MainActivity extends AppCompatActivity  {
         graph.getViewport().setMaxX(10);
         graph.getViewport().setMinY(0);
 
-
+        counterTxt = findViewById(R.id.counter);
 
     }
 
     private SensorEventListener mLightSensorListener = new SensorEventListener() {
+        @SuppressLint("SetTextI18n")
         @Override
         public void onSensorChanged(SensorEvent sensorEvent) {
+            float beforeLux = 0;
+
+            if (yLux != null){
+                beforeLux = yLux;
+            }
+
             yLux = sensorEvent.values[0];
             if (yLux == null) {
                 yLux = 0f;
             }
 
+            if (beforeLux < yLux && (yLux - beforeLux)/yLux >= .03 && !isUp && !hold){
+                Log.d("MY_APP", "UP");
+                upCounter +=1;
+                isUp = true;
+                hold = true;
+            } else if (beforeLux > yLux && (beforeLux - yLux)/beforeLux >= .03 && isUp && !hold){
+                isUp = false;
+                Log.d("MY_APP", "DOWN");
+                downCounter +=1;
+
+
+
+            }
+
+            counterTxt.setText("Counter: "+ downCounter + " DOWN; "+ upCounter +" UP");
 
         }
 
@@ -111,4 +158,6 @@ public class MainActivity extends AppCompatActivity  {
             mSensorManager.unregisterListener(mLightSensorListener);
         }
     }
+
+
 }
