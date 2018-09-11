@@ -114,12 +114,12 @@ public class MainActivity extends AppCompatActivity  {
                 yLux = 0f;
             }
 
-            if (beforeLux < yLux && (yLux - beforeLux)/yLux >= .03 && !isUp && !hold){
+            if (beforeLux < yLux && (yLux - beforeLux)/yLux >= .1 && !isUp && !hold){
                 Log.d("MY_APP", "UP");
                 upCounter +=1;
                 isUp = true;
                 hold = true;
-            } else if (beforeLux > yLux && (beforeLux - yLux)/beforeLux >= .03 && isUp && !hold){
+            } else if (beforeLux > yLux && (beforeLux - yLux)/beforeLux >= .1 && isUp && !hold){
                 isUp = false;
                 Log.d("MY_APP", "DOWN");
                 downCounter +=1;
