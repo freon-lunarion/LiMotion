@@ -16,6 +16,8 @@ import com.jjoe64.graphview.GraphView;
 import com.jjoe64.graphview.series.DataPoint;
 import com.jjoe64.graphview.series.LineGraphSeries;
 
+import java.util.Calendar;
+import java.util.Date;
 import java.util.Iterator;
 
 public class MainActivity extends AppCompatActivity  {
@@ -30,7 +32,9 @@ public class MainActivity extends AppCompatActivity  {
     private Boolean hold = false;
     private Integer downCounter = 0;
     private Integer upCounter = 0;
-    private TextView counterTxt;
+    private TextView counterTxt, waveTxt;
+    Long lastWaveTime;
+    Long currentTime;
 
 
     long startTime = 0;
@@ -50,8 +54,16 @@ public class MainActivity extends AppCompatActivity  {
                 yLux = 0f;
             }
 
+            if (lastWaveTime != null ) {
+                long delta = (long) ((System.nanoTime() - lastWaveTime) /1e6);
+                if (delta >= 2000) {
+                    waveTxt.setText( "" );
+                }
+
+            }
+
             series.appendData(new DataPoint(xPoint,yLux),true,25);
-            Log.d("MY_APP", String.valueOf(yLux+ " - "+ xPoint));
+//            Log.d("MY_APP", String.valueOf(yLux+ " - "+ xPoint));
 
             timerHandler.postDelayed(this, 500);
 
@@ -67,10 +79,15 @@ public class MainActivity extends AppCompatActivity  {
                 hold = false;
             }
 
-            timerHandler2.postDelayed(this, 1500);
+            timerHandler2.postDelayed(this, 800);
 
         }
     };
+
+
+
+
+
 
 
     @Override
@@ -96,6 +113,7 @@ public class MainActivity extends AppCompatActivity  {
         graph.getViewport().setMinY(0);
 
         counterTxt = findViewById(R.id.counter);
+        waveTxt = findViewById( R.id.txt_wave );
 
     }
 
@@ -114,17 +132,31 @@ public class MainActivity extends AppCompatActivity  {
                 yLux = 0f;
             }
 
-            if (beforeLux < yLux && (yLux - beforeLux)/yLux >= .1 && !isUp && !hold){
+            if (beforeLux < yLux && (yLux - beforeLux)/yLux >= .3 && !isUp && !hold){
                 Log.d("MY_APP", "UP");
                 upCounter +=1;
                 isUp = true;
                 hold = true;
-            } else if (beforeLux > yLux && (beforeLux - yLux)/beforeLux >= .1 && isUp && !hold){
+                currentTime = System.nanoTime();
+                waveTxt.setText( "a Wave !" );
+                Log.d("currentTime", String.valueOf( currentTime ) );
+                if (lastWaveTime != null) {
+                    long delta = (long) ((currentTime - lastWaveTime) /1e6);
+                    Log.d("delta", String.valueOf( delta ) );
+                    if (delta <= 1200 && delta >= 300) {
+                        waveTxt.setText( "Double Wave !" );
+                        Log.d("Wave", "Double" );
+                    } else {
+                        Log.d("Wave", "Single" );
+
+                    }
+
+                }
+                lastWaveTime = currentTime;
+            } else if (beforeLux > yLux && (beforeLux - yLux)/beforeLux >= .3 && isUp && !hold){
                 isUp = false;
                 Log.d("MY_APP", "DOWN");
                 downCounter +=1;
-
-
 
             }
 
@@ -134,7 +166,7 @@ public class MainActivity extends AppCompatActivity  {
 
         @Override
         public void onAccuracyChanged(Sensor sensor, int accuracy) {
-            Log.d("MY_APP", sensor.toString() + " - " + accuracy);
+//            Log.d("MY_APP", sensor.toString() + " - " + accuracy);
         }
 
 
