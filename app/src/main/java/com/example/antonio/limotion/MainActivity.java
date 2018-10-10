@@ -27,13 +27,17 @@ public class MainActivity extends AppCompatActivity  {
     private Double xPoint;
     private LineGraphSeries<DataPoint> series;
     private GraphView graph;
-    private Float yLux;
+    private Float curLux;
     private Boolean isUp = true;
-    private Boolean hold = false;
+    private Boolean isHold = false;
+    private Boolean isPlay = false;
     private Integer downCounter = 0;
     private Integer upCounter = 0;
     private TextView counterTxt, waveTxt;
-    Long lastWaveTime;
+    private Float lastLux ;
+    private Long lastWaveTime;
+    private Long lastDown = 0l;
+    private Integer countWave = 0;
     Long currentTime;
 
 
@@ -50,19 +54,17 @@ public class MainActivity extends AppCompatActivity  {
             int minutes = seconds / 60;
             seconds = seconds % 60;
             xPoint +=.5d;
-            if (yLux == null) {
-                yLux = 0f;
+            if (curLux == null) {
+                curLux = 0f;
             }
 
             if (lastWaveTime != null ) {
                 long delta = (long) ((System.nanoTime() - lastWaveTime) /1e6);
-                if (delta >= 2000) {
-                    waveTxt.setText( "" );
-                }
+
 
             }
 
-            series.appendData(new DataPoint(xPoint,yLux),true,25);
+            series.appendData(new DataPoint(xPoint,curLux),true,25);
 //            Log.d("MY_APP", String.valueOf(yLux+ " - "+ xPoint));
 
             timerHandler.postDelayed(this, 500);
@@ -75,8 +77,8 @@ public class MainActivity extends AppCompatActivity  {
 
         @Override
         public void run() {
-            if (hold){
-                hold = false;
+            if (isHold){
+                isHold = false;
             }
 
             timerHandler2.postDelayed(this, 800);
@@ -121,46 +123,81 @@ public class MainActivity extends AppCompatActivity  {
         @SuppressLint("SetTextI18n")
         @Override
         public void onSensorChanged(SensorEvent sensorEvent) {
-            float beforeLux = 0;
+            curLux = sensorEvent.values[0];
+            Float deltaLux = 0f;
+            Long deltaWave = 0l;
+            Log.d("curLux", String.valueOf(curLux));
 
-            if (yLux != null){
-                beforeLux = yLux;
-            }
+            try {
 
-            yLux = sensorEvent.values[0];
-            if (yLux == null) {
-                yLux = 0f;
-            }
+                if (lastLux > curLux ){
+                    deltaLux = (lastLux - curLux)/lastLux;
+                } else {
+                    deltaLux = (curLux - lastLux)/curLux;
+                }
 
-            if (beforeLux < yLux && (yLux - beforeLux)/yLux >= .3 && !isUp && !hold){
-                Log.d("MY_APP", "UP");
-                upCounter +=1;
-                isUp = true;
-                hold = true;
-                currentTime = System.nanoTime();
-                waveTxt.setText( "a Wave !" );
-                Log.d("currentTime", String.valueOf( currentTime ) );
-                if (lastWaveTime != null) {
-                    long delta = (long) ((currentTime - lastWaveTime) /1e6);
-                    Log.d("delta", String.valueOf( delta ) );
-                    if (delta <= 1200 && delta >= 300) {
-                        waveTxt.setText( "Double Wave !" );
-                        Log.d("Wave", "Double" );
-                    } else {
-                        Log.d("Wave", "Single" );
+                if (deltaLux >= .03) {
+                    if (!isUp && ! isHold) {
+                        upCounter += 1;
+                        isUp = true;
+                        isHold = true;
+
+                        long curWaveTime = System.currentTimeMillis();
+
+                        if (lastWaveTime != null ) {
+                            deltaWave = (long) ((curWaveTime - lastWaveTime));
+
+                            if (deltaWave <= 2200 && deltaWave >= 100) {
+                                countWave = (countWave + 1) % 4;
+
+                            } else {
+                                countWave = 1;
+
+
+                            }
+                            Log.d("Wave", countWave + ", "+deltaLux+","+deltaWave );
+
+                        }
+
+                        lastWaveTime = curWaveTime;
+
+                    } else if (isUp && !isHold){
+                        isUp = false;
+                        downCounter += 1;
 
                     }
-
                 }
-                lastWaveTime = currentTime;
-            } else if (beforeLux > yLux && (beforeLux - yLux)/beforeLux >= .3 && isUp && !hold){
-                isUp = false;
-                Log.d("MY_APP", "DOWN");
-                downCounter +=1;
+
+
+            } catch (Exception e) {
+                lastLux = curLux;
+                downCounter = 0;
+            }
+
+            if (lastLux> curLux) {
+                lastLux = curLux;
+            } else if (deltaLux >=.03) {
+                lastLux = curLux;
+
 
             }
 
             counterTxt.setText("Counter: "+ downCounter + " DOWN; "+ upCounter +" UP");
+
+            switch (countWave){
+                case 1:
+                    waveTxt.setText("Single Wave");
+                    break;
+                case 2:
+                    waveTxt.setText("Double Wave");
+                    break;
+                case 3:
+                    waveTxt.setText("Triple Wave");
+                    break;
+                default:
+                    waveTxt.setText( "" );
+                    break;
+            }
 
         }
 
